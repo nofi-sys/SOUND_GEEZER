@@ -1,0 +1,127 @@
+#: import FadeTransition kivy.uix.screenmanager.FadeTransition
+Esa:
+    text: 'ESA - EDITOR de SONIDO AUTOMATIZADO'
+  
+    #transition: FadeTransition()
+  
+    Login:
+  
+    Menu:
+
+    Vocabulario:
+
+
+
+<Login>:
+
+    id: 'log'
+    name: 'login'
+    nombre: 'Usuario'
+    archivo: ''
+    fecha:[True, ' ' + self.fechaActual]
+
+    GridLayout:
+        id: grilla
+        cols: 4
+        rows: 3
+        pos_hint: {'x': 0, 'center_y': .5}
+        size_hint_y: 0.2
+        padding: 10
+
+        Label:
+
+        Label:
+
+        Label:
+
+        Label:
+            text: ''
+
+        TextInput:
+            id:'nombreP'
+            nombre: 'Paciente'
+            hint_text: "Nombre del Paciente"
+            focus: False
+            multiline: False
+            on_text: root.nombre = self.text
+            on_text_validate:
+                if not root.fecha[0]: root.fecha[1] = ''
+                root.nombre = self.text
+                root.archivo = self.text + root.fecha[1] + '.xls'
+                root.crearPaciente()
+                app.root.current = 'menu'
+
+        CheckBox:
+            id: 'fecha'
+            active: root.fecha[0]
+            on_release:
+                root.fecha[0] = not root.fecha[0]
+                if not root.fecha[0]: root.fecha[1] = ''
+                else: root.fecha[1] = ' ' + root.fechaActual
+
+
+        Label:
+            text: 'AÑO'
+
+        Label:
+            text: '.xls'
+
+        Label:
+
+        Label:
+
+        Label:
+
+        Button:
+            on_release:
+                if not root.fecha: root.fecha[1] = ''
+                root.archivo = root.nombre + root.fecha[1] + '.xls'
+                root.crearPaciente()
+                app.root.current = 'menu'
+            text: 'ACEPTAR'
+            font_size: 20
+
+
+<Menu>:
+
+    name: 'menu'
+
+    GridLayout:
+        id: grilla
+        cols: 2
+        rows: 3
+        pos_hint: {'x': -.1, 'center_y': .7}
+        size_hint_y: 0.2
+        padding: 10
+
+        Label:
+            text: 'WAIS 4'
+            font_size: root.font_s
+
+        Button:
+            on_release: app.root.current = 'matrices'
+            text: 'MATRICES'
+            font_size: root.font_s
+
+        Label:
+
+
+        Button:
+            on_release: app.root.current = 'analog'
+            text: 'ANALOGÍAS'
+            font_size: root.font_s
+
+        Label:
+
+        Button:
+            on_release: app.root.current = 'vocabulario'
+            text: 'VOCABULARIO'
+            font_size: root.font_s
+
+<Vocabulario>:
+    name: 'vocabulario'
+
+    TestVocabulario:
+
+
+
