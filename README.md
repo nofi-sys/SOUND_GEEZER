@@ -1,4 +1,4 @@
-# ESA!
+# GEEZER
 EDITOR DE SONIDO AUTOMATIZADO
 
 El armado de un film toma entre un mes y tres meses de trabajo duro. El aspecto más importante y creativo, donde el diseñador se luce y expresa, es en la selección de los sonidos, lo que podríamos llamar el qué suena y, una vez terminado el armado, el cómo y dónde suena. Estos aspectos son los que dan valor estético al trabajo. Por su parte, el cuándo suena es quizás el que lleva más tiempo, dedicación y frustración.
