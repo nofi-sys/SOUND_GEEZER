@@ -1,0 +1,230 @@
+
+import spacy
+import pickle
+import os
+import sys
+
+#from TiposGenerales import *
+
+class Clasificar():
+    # CLASE  BASE PARA HEREDAR METODOS DE CLASIFIACIÓN
+    NORM_EXCEPTIONS = {
+        "S-S": "SONIDO SOLOS",
+        "SX": "SONIDO SOLOS",
+        "AMB": "AMBIENTE",
+        "AX": "AMBIENTE",
+        "DIR": "DIRECTO",
+        "DX": "DIRECTO",
+        "DUB": "DOBLAJE"
+    }
+
+    def UBICAR_EN_AUDIOTECA (self, nombreArchivo):
+
+        #ANALIZAR TIPO (CLASIFICAR POR NOMBRE)
+        pass
+
+    def CLASIFICAR_POR_NOMBRE(self, nombreArchivo = 'S-S AULLIDO LEJANO NOCHE'):
+
+        #ANALIZAR NOMBRE DE ARCHIVO PARA ESTIMAR A QUÉ CLASE PERTENECE:
+        #RECIBE : NOMBRE
+        #ENTREGA:
+
+        nlp = spacy.load('es')
+
+        #ABREVIATURAS Y EQUIVALENCIAS DE SENTIDO
+
+        # TODO: EXTRAER TAG (TIPO)
+        # TIPO: S-S, AMB, DIR, MUSICA, FX. ESTIMAR POR TAG (EJ: SI EL ARCHIVO
+        # SE LLAMA "S-S ...") Y SINO, ESTIMAR POR FORMATO DE NOMBRE (EJ: MVI_7048
+        # ES UN ARCHIVO DE CÁMARA).
+
+        tag, nombreArchivo = self.extraerTag(nombreArchivo)
+        doc = nlp(nombreArchivo)
+
+        #EXTRAER RAIZ Y RESTO
+
+        for token in doc:
+            print(token.text, token.dep_, token.head.text, token.head.pos_,
+                  [child for child in token.children])
+
+    #TODO: HAY QUE ARMAR UN DICT CON ESTA ESTRUCTURA {RAIZ: palabra, RESTO: [RESTO1, ...]}.
+            # EN EL FUTURO PODEMOS USAR MAS DATOS DE LAS PALABRAS
+
+            if token.dep_ == 'ROOT':
+                self.ubicarRaiz(token.text, token.head.pos_)
+
+
+        instancia = None
+
+        # RESTO: QUITAR STOP WORDS. ENCONTRAR NÚCLEO (EJ: PASOS CEMENTO, "PASOS" ES EL
+        # NÚCLEO)
+
+        # INFERIR UBICACIÓN CORRECTA POR UBICACIÓN USUAL DE NÚCLEO. DEBE HABER UNA LISTA
+        # DE PALABRAS (NÚCLEOS) COMUNES PARA CADA SECCIÓN DE LA AUDIOTECA.
+
+        # BUSCAR EXCEPCIONES (EJ: SI "PASOS" VA SEGUIDO DE UNA CONSTRUCCIÓN ESPECÍFICA,
+        # COMO "PASOS CABALLO") ESTO DEBE ENTENDERSE COMO PASOS DE CABALLO Y POR LO
+        # TANTO, IR A ANIMALES.
+
+        #UBICAR SONIDO EN CARPETA CORRECTA
+
+
+        return instancia
+
+
+    def CLASIFICAR_POR_AUDIO(self, nombreArchivo, instancia):
+
+        #CHEQUEAR A QUE CLASE PERTENECE ANALIZANDO AUDIO TOMANDO
+        #COMO PUNTO DE PARTIDA EL RESULTADO DE LA CLASIFICACIÓN POR NOMBRE
+
+        #LA IDEA ES IMPLEMENTAR ESTO A PARTIR DE MODELO PREEXISTENTE DE TENSOR FLOW
+
+        tipo = 'S-S'
+        subtipo = 'SONO'
+        return tipo, subtipo
+
+#UTILIDADES
+    def extraerTag(self, nombreArchivo):
+
+        """RECIBE NOMBRE DE ARCHIVO Y DEVUELVE TAG + NOMBRE  """
+        #TODO: FALTA RECONOCER CUANDO LA PRIMERA PALABRA NO ES UN TAG.
+        #LA IDEA MÁS INGENUA ES CREAR UNA LISTA DE TAGS
+
+        tag = nombreArchivo.split(' ', 1)[0]
+        if tag in TAG_LISTA:
+            nombre = nombreArchivo.split(' ', 1)[1]
+        else:
+            nombre = nombreArchivo
+            tag = ''
+        print('TAG ' + tag)
+        print('NOMBRE ' + nombre)
+        return tag, nombre
+
+
+    def ubicarRaiz(self, palabra, resto, path2Audioteca = '/home/nofi/AUDIOTECA/'):
+
+        # RECIBE: UNA FRASE SEPARADA EN RAIZ Y RESTO + EL PATH DE LA AUDIOTECA
+        # DEVUELVE: EL PATH FINAL DE UBICACIÓN DEL ARCHIVO
+
+
+        """El objetivo de esta función es buscar palabras clave en las distintas
+        carpetas de la audioteca. Cada carpeta tiene que tener una lista de palabras}
+        clave. Si encuentra la palabra en una de esas listas, devuelve el path donde
+        se podrá ubicar el archivo"""
+
+        raiz = path2Audioteca
+
+        hits = []
+        hitpath = []
+
+        with open(raiz + 'CLAVES.pck', 'rb') as claves:
+            CLAVES = pickle.load(claves)
+
+        #ITERAR POR LISTA DE PALABRAS CLAVE, BUSCANDO SI ESTÁ PRESENTE NUESTRA
+        # palabra (DADA A LA FUNCIÓN COMO ARGUMENTO).
+        for carpeta in CLAVES.keys():
+            for subcarpeta in CLAVES[carpeta].keys():
+
+        #DE ENCONTRAR LA PALABRA CLAVE, SUMAR (UBICACIÓN Y PATH) A LISTA DE hits
+                #print(CLAVES[carpeta][subcarpeta])
+                if palabra in CLAVES[carpeta][subcarpeta].keys():
+                    path = path2Audioteca + carpeta + '/' + subcarpeta + '/'
+                    hitpath.append(path)
+                    hits.append([carpeta, subcarpeta, palabra])
+                    print ('HIT: ', CLAVES[carpeta][subcarpeta])
+                    print(hits)
+                    print(palabra)
+
+        if len(hits) > 1:
+            print('AMBIGÜEDAD')
+        #SI len(hits) >= 1, tenemos un hit, FIJARSE PUNTAJE DE LA PALABRA CLAVE
+
+        if len(hits) == 1:
+
+        # SI ES < 3   CREAR POPUP PARA OBTENER PERMISO DEL USUARIO. SI ESTÁ OK,
+        # DAR UN PUNTO A PALABRA CLAVE PARA ESA UBICACIÓN, COPIAR resto A LISTA EN
+        # ESA UBICACIÓN Y return path
+            print (hits)
+            if CLAVES[hits[0][0]][hits[0][1]][hits[0][2]] < 3:
+                #TODO: consultar resultado para evitar falso positivo
+                CLAVES[hits[0][0]][hits[0][1]][hits[0][2]] += 1
+
+                #if consultarResultado[0](raiz, hitpath):
+                #    CLAVES[hits[0]][hits[1]][hits[2]] += 1
+                #    return path
+                #else:
+                #    return consultarResultado[1]
+
+            else:
+
+                CLAVES[hits[0][0]][hits[0][1]][hits[0][2]] += 1
+
+        else:
+
+            path =  ubicarManualmente(raiz)
+
+        direccion = separar(hitpath[-1])
+
+    #    CLAVES[direccion[-2]][direccion[-1]][palabra] = [1, []]
+        print(path)
+
+
+        return path
+
+    #SI len(hits) > 1 tenemos una ambiguedad.
+
+    #RESOLVER AMBIGUEDAD: COMPARAR RESTO PARA VER SI COINCIDE CON EL RESTO
+    #DE CUALQUIER OTRA LISTA. SI COINCIDE EN UNA PALABRA PERO NO EN OTRA, DAR
+    #PUNTAJE A ESA PALABRA.
+
+
+        return path
+
+    def consultarResultado(self, raiz = '/', path = None):
+
+        if path == '/' or no:
+
+            return False, ubicarManualmente(raiz)
+
+        elif si:
+            return True, None
+
+        else:
+            print ('error')
+
+    def ubicarManualmente(self, raiz = '/', path = None):
+
+        return path
+
+    def separar(self, path):
+        allparts = []
+        while 1:
+            parts = os.path.split(path)
+            if parts[0] == path:  # sentinel for absolute paths
+                allparts.insert(0, parts[0])
+                break
+            elif parts[1] == path: # sentinel for relative paths
+                allparts.insert(0, parts[1])
+                break
+            else:
+                path = parts[0]
+                allparts.insert(0, parts[1])
+        return allparts
+
+
+
+if __name__ == '__main__':
+
+    CLASIFICAR_POR_NOMBRE()
+
+
+
+    #EJEMPLO DE USO
+
+  #  import TiposGenerales
+
+  #  arch = 'S-S PASOS CEMENTO'
+
+  #  tipo = Tipo (CLASIFICAR_POR_AUDIO(arch, CLASIFICAR_POR_NOMBRE(arch)))
+
+
