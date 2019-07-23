@@ -29,7 +29,7 @@ class Clasificar():
         #RECIBE : NOMBRE
         #ENTREGA:
 
-        nlp = spacy.load('es')
+        nlp = spacy.load('es_core_news_sm')
 
         #ABREVIATURAS Y EQUIVALENCIAS DE SENTIDO
 
