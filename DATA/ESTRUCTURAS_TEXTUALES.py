@@ -72,6 +72,7 @@ class Estructura:
 
                 #print(letra, ' es ', 'SIMBOLO')
         self.forma_simple = tuple(self.forma_simple)
+        self.forma_simple = str(self.forma_simple)
         return tuple(forma)
 
 
@@ -80,37 +81,74 @@ class Morfologia:
     def __init__(self):
 
         self.formas = {
-            'simples':{},
+            'simples': self.baseDatosEstructuras_S(),
             'complejas':{},
             'partes':{}
         }
 
-        self.comparar()
+        #self.comparar()
+        #self.crearTablaEstructura()
 
     def comparar(self):
 
-        for item in self.baseDeDatos():
+        for item in self.baseDatosRegiones():
             estructura = Estructura(item[0])
-            print(estructura.partes, estructura.forma_simple, estructura.forma_compleja)
+            #print(estructura.partes, estructura.forma_simple, estructura.forma_compleja)
             if estructura.forma_simple in self.formas['simples']:
                 self.formas['simples'][estructura.forma_simple] +=1
             else:
                 self.formas['simples'].update({estructura.forma_simple : 1})
 
-    def baseDeDatos(self):
+    def correlacionar(self):
+        #print(self.baseDatosEstructuras_S())
+        #print("formas",self.formas['simples'])
+
+        for item in self.baseDatosRegiones():
+            estructura = Estructura(item[0])
+            print("item ",item[0], " id ", item[1])
+            print("id estructura: ", self.formas['simples'][estructura.forma_simple])
+
+
+    def crearTablaEstructura(self):
+
+        self.comparar()
+        lista_estructuras_simples = sorted(self.formas['simples'].items(), key=lambda x: x[1])
+        print(lista_estructuras_simples)
+        conn = sqlite3.connect('ptfiles.db')
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS ESTRUCTURA_S(id INTEGER PRIMARY KEY, forma TEXT, cantidad INTEGER)")
+        for estructura in reversed(lista_estructuras_simples):
+            print(estructura)
+            c.execute("INSERT INTO ESTRUCTURA_S (forma, cantidad) VALUES (?, ?)", (str(estructura[0]), estructura[1]))
+        conn.commit()
+
+    def baseDatosRegiones(self):
         datos = []
         # abrir base de datos
         conn = sqlite3.connect('ptfiles.db')
         c = conn.cursor()
         # seleccionar todos los nombres de archivo
-        c.execute('SELECT nombre_audio FROM REGION')
+        c.execute('SELECT nombre_audio, id FROM REGION')
         # append nombres de archivo a lista datos
-        for nombre in c.fetchall():
-            datos.append(nombre)
+        for nombre, id in c.fetchall():
+            datos.append([nombre, id])
         return datos
 
+    def baseDatosEstructuras_S(self):
+        formas = {}
+        # abrir base de datos
+        conn = sqlite3.connect('ptfiles.db')
+        c = conn.cursor()
+        # seleccionar todos los nombres de archivo
+        c.execute('SELECT forma, id FROM ESTRUCTURA_S')
+        # append nombres de archivo a lista datos
+        for forma, id in c.fetchall():
+            formas.update ({forma: id})
+        return formas
+
 morfologia = Morfologia()
-print(morfologia.formas['simples'])
+morfologia.correlacionar()
+#print(morfologia.formas['simples'])
 # estructura = Estructura()
 # print(estructura.forma)
 # print(estructura.partes)
