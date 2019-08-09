@@ -1,6 +1,7 @@
 import sqlite3
 import tqdm
 import pickle
+import pandas as pd
 # DISTINGUIR ENTRE BLOQUES HOMOGÉNEOS
 
 TIPOS_BLOQUE = ['ABC', 'NUM', 'SIM']
@@ -140,9 +141,26 @@ class Morfologia:
     def analisisCorrelacionRegionTrack(self):
         with open('estructuras.pkl', 'rb') as archivo:
             self.estructuras = pickle.load(archivo)
-            for item in self.estructuras:
+            self.estructurasDF = pd.DataFrame(self.estructuras)
+            self.estructurasDF = self.estructurasDF.transpose()
+            df = self.estructurasDF
 
-                print(item)
+            for index, rows in df.iterrows():
+
+                rows.fillna(0, inplace=True)
+
+                if sum(rows) > 800:
+
+                    for row in rows:
+                        if (row/sum(rows)) > 0.5:
+                            print(index)
+                            print(rows)
+
+            # print(self.estructurasDF.mean(axis=0))
+            # print(self.estructurasDF)
+            # for item in self.estructuras:
+            #
+            #     print(item, self.estructuras[item])
 
     def crearTablaEstructura(self):
 
