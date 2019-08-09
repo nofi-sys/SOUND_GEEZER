@@ -1,6 +1,6 @@
 import sqlite3
-
-
+import tqdm
+import pickle
 # DISTINGUIR ENTRE BLOQUES HOMOGÉNEOS
 
 TIPOS_BLOQUE = ['ABC', 'NUM', 'SIM']
@@ -100,14 +100,49 @@ class Morfologia:
                 self.formas['simples'].update({estructura.forma_simple : 1})
 
     def correlacionar(self):
+
+        # CORRELACIONA LA ESTRUCTURA SIMPLE CON TIPO DE SONIDO
+        # (TAG DEL TRACK DONDE ENCONTRAMOS EL ARCHIVO).
+        # EL OBJETIVO ES ADIVINAR DE QUÉ TIPO DE SONIDO SE TRATA
+        # SÓLO MIRANDO LA ESTRUCTURA, O AL MENOS UN ESTIMADO
+        conn = sqlite3.connect('ptfiles.db')
+        c = conn.cursor()
+        self.estructuras = {}
         #print(self.baseDatosEstructuras_S())
         #print("formas",self.formas['simples'])
 
-        for item in self.baseDatosRegiones():
+        for item in tqdm.tqdm(self.baseDatosRegiones()):
             estructura = Estructura(item[0])
-            print("item ",item[0], " id ", item[1])
-            print("id estructura: ", self.formas['simples'][estructura.forma_simple])
+            estructura_simple = self.formas['simples'][estructura.forma_simple]
+            # print("item ",item[0], " id ", item[1])
+            # print("track: ", item[2])
+            # print("id estructura: ", self.formas['simples'][estructura.forma_simple])
+            # seleccionar todos los nombres de archivo
+            c.execute('SELECT tag_id FROM TRACK WHERE nombre = ?', (item[2],))
+            tag = c.fetchall()
+            tag = tag[0][0]
+            if tag is not None:
+                c.execute('SELECT nombre FROM TAG WHERE id = ?', (tag, ))
+                tag = c.fetchall()
+                tag = tag[0][0]
+            #print(tag)
+            if estructura_simple in self.estructuras.keys():
+                if tag in self.estructuras[estructura_simple]:
+                    self.estructuras[estructura_simple][tag] +=1
+                else:
+                    self.estructuras[estructura_simple].update({tag : 1})
+            else:
+                self.estructuras.update({estructura_simple: {tag: 1}})
+        print(self.estructuras)
+        with open('estructuras.pkl', '+wb') as archivo:
+            pickle.dump(self.estructuras, archivo)
 
+    def analisisCorrelacionRegionTrack(self):
+        with open('estructuras.pkl', 'rb') as archivo:
+            self.estructuras = pickle.load(archivo)
+            for item in self.estructuras:
+
+                print(item)
 
     def crearTablaEstructura(self):
 
@@ -128,10 +163,10 @@ class Morfologia:
         conn = sqlite3.connect('ptfiles.db')
         c = conn.cursor()
         # seleccionar todos los nombres de archivo
-        c.execute('SELECT nombre_audio, id FROM REGION')
+        c.execute('SELECT nombre_audio, id, nombre_track FROM REGION')
         # append nombres de archivo a lista datos
-        for nombre, id in c.fetchall():
-            datos.append([nombre, id])
+        for nombre, id, track in c.fetchall():
+            datos.append([nombre, id, track])
         return datos
 
     def baseDatosEstructuras_S(self):
@@ -147,7 +182,9 @@ class Morfologia:
         return formas
 
 morfologia = Morfologia()
-morfologia.correlacionar()
+morfologia.analisisCorrelacionRegionTrack()
+
+#morfologia.correlacionar()
 #print(morfologia.formas['simples'])
 # estructura = Estructura()
 # print(estructura.forma)
