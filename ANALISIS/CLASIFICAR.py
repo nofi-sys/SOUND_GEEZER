@@ -2,34 +2,32 @@
 import spacy
 import pickle
 import os
-import sys
+import pandas as pd
 
 #from TiposGenerales import *
 
-class Clasificar():
-    # CLASE  BASE PARA HEREDAR METODOS DE CLASIFIACIÓN
-    NORM_EXCEPTIONS = {
-        "S-S": "SONIDO SOLOS",
-        "SX": "SONIDO SOLOS",
-        "AMB": "AMBIENTE",
-        "AX": "AMBIENTE",
-        "DIR": "DIRECTO",
-        "DX": "DIRECTO",
-        "DUB": "DOBLAJE"
-    }
+class Clasificar:
+
+    def __init__(self):
+
+        #CARGAR DICCIONARIO CATEGORÍAS
+        with open('/media/nofi-ai/NOFI_2022/DESARROLLO/ESA/DATA/categorias.pkl', 'rb') as f:
+            self.categorias = pickle.load(f)
+            # print(self.categorias)
 
     def UBICAR_EN_AUDIOTECA (self, nombreArchivo):
 
-        #ANALIZAR TIPO (CLASIFICAR POR NOMBRE)
+        #ANALIZAR TIPO (CLASIFICAR POR NOMBRE) PONER ETIQUETA SEGÚN ONTOLOGÍA AUDIOSET (GOOGLE)
         pass
 
-    def CLASIFICAR_POR_NOMBRE(self, nombreArchivo = 'S-S AULLIDO LEJANO NOCHE'):
+    def CLASIFICAR_POR_NOMBRE(self, nombreArchivo='S-S AULLIDO LEJANO NOCHE.wav'):
 
         #ANALIZAR NOMBRE DE ARCHIVO PARA ESTIMAR A QUÉ CLASE PERTENECE:
+
         #RECIBE : NOMBRE
         #ENTREGA:
 
-        nlp = spacy.load('es_core_news_sm')
+
 
         #ABREVIATURAS Y EQUIVALENCIAS DE SENTIDO
 
@@ -38,23 +36,37 @@ class Clasificar():
         # SE LLAMA "S-S ...") Y SINO, ESTIMAR POR FORMATO DE NOMBRE (EJ: MVI_7048
         # ES UN ARCHIVO DE CÁMARA).
 
-        tag, nombreArchivo = self.extraerTag(nombreArchivo)
-        doc = nlp(nombreArchivo)
+        tag, nombre, extension = self.dividirTagNombreExt(nombreArchivo)
+
+        nlp = spacy.load('es_core_news_lg')
+        nombre = nlp(nombre)
+        for token in nombre:
+            print(token.text, token.pos_, token.dep_, token.rank, token.head.text)
+
+        #extraer la palabra mas importante
+        palabra_importante = nombre[0]
+
+        import json
+
+        with open('/media/nofi-ai/NOFI_2022/DESARROLLO/ESA/AUDIOTECA/DATA/ontology_es.json', 'r') as f:
+            elementos = json.load(f)
+        candidatos = {}
+        for elemento in elementos:
+            token = nlp(elemento['name_es'].lower())
+            if token.similarity(palabra_importante) > 0.75:
+                candidatos[token] = token.similarity(palabra_importante)
+                # print("el tipo de sonido es: ", elemento['name_es'], " por un porcentaje de ", token.similarity(palabra_importante))  # Imprime el nombre del elemento más similar
+        max_value = max(candidatos.items(), key=lambda x: x[1])
+        tipo_de_sonido = str(max_value[0])
+        print(tipo_de_sonido)
 
         #EXTRAER RAIZ Y RESTO
 
-        for token in doc:
-            print(token.text, token.dep_, token.head.text, token.head.pos_,
-                  [child for child in token.children])
 
     #TODO: HAY QUE ARMAR UN DICT CON ESTA ESTRUCTURA {RAIZ: palabra, RESTO: [RESTO1, ...]}.
             # EN EL FUTURO PODEMOS USAR MAS DATOS DE LAS PALABRAS
 
-            if token.dep_ == 'ROOT':
-                self.ubicarRaiz(token.text, token.head.pos_)
 
-
-        instancia = None
 
         # RESTO: QUITAR STOP WORDS. ENCONTRAR NÚCLEO (EJ: PASOS CEMENTO, "PASOS" ES EL
         # NÚCLEO)
@@ -68,9 +80,7 @@ class Clasificar():
 
         #UBICAR SONIDO EN CARPETA CORRECTA
 
-
-        return instancia
-
+        return tag, nombre,extension
 
     def CLASIFICAR_POR_AUDIO(self, nombreArchivo, instancia):
 
@@ -84,21 +94,32 @@ class Clasificar():
         return tipo, subtipo
 
 #UTILIDADES
-    def extraerTag(self, nombreArchivo):
+    def dividirTagNombreExt(self, nombreArchivo):
 
         """RECIBE NOMBRE DE ARCHIVO Y DEVUELVE TAG + NOMBRE  """
-        #TODO: FALTA RECONOCER CUANDO LA PRIMERA PALABRA NO ES UN TAG.
-        #LA IDEA MÁS INGENUA ES CREAR UNA LISTA DE TAGS
+        # NORMALIZAR (pasamos a minúscula, borramos puntos y _)
+        nombreArchivo, extension = os.path.splitext(nombreArchivo)
+        nombreArchivo = nombreArchivo.lower()
+        nombreArchivo = nombreArchivo.replace('.', ' ')
+        nombreArchivo = nombreArchivo.replace('_', ' ')
 
-        tag = nombreArchivo.split(' ', 1)[0]
-        if tag in TAG_LISTA:
-            nombre = nombreArchivo.split(' ', 1)[1]
-        else:
-            nombre = nombreArchivo
-            tag = ''
-        print('TAG ' + tag)
-        print('NOMBRE ' + nombre)
-        return tag, nombre
+        tag, *resto = nombreArchivo.split()
+        nombre = " ".join(resto)
+        for categoria, etiquetas in self.categorias.items():
+            # print(categoria, etiquetas)
+            # print("tag ", tag)
+            # Si la etiqueta está dentro de la lista de etiquetas de la categoría
+            if tag in etiquetas:
+                # Asigno a la variable 'tag' la palabra clave (categoría) actual
+                tag_ok = categoria
+                break
+        try:
+            tag = tag_ok
+        except tag_ok == None:
+            tag = '_'
+
+
+        return tag, nombre, extension
 
 
     def ubicarRaiz(self, palabra, resto, path2Audioteca = '/home/nofi/AUDIOTECA/'):
@@ -214,8 +235,8 @@ class Clasificar():
 
 
 if __name__ == '__main__':
-
-    CLASIFICAR_POR_NOMBRE()
+    clasificar = Clasificar()
+    print(clasificar.CLASIFICAR_POR_NOMBRE())
 
 
 
